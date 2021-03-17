@@ -13,27 +13,27 @@ server.bind(ADDRESS)
 def start():
     print("Server is working on " + SERVER)
 
-    server.listen()
+    server.listen(5)
 
-    while true:
+    while True:
         conn, addr = server.accept()
         conn.send("NAME".encode(FORMAT))
         name = conn.recv(1024).decode(FORMAT)
         names.append(name)
         clients.append(conn)
 
-        print(f"NAme is :{name}")
+        print("Name is :{name}")
 
-        broadcastMessage(f"{name} has joined the chat!".encode(FORMAT))
+        broadcastMessage("{name} has joined the chat!".encode(FORMAT))
         conn.send('Connection successful!'.encode(FORMAT))
 
         thread = threading.Thread(target = handle, args = (conn, addr))
         thread.start()
 
-        print(f"active connections {threading.activeCount()-1}")
+        print("active connections {threading.activeCount()-1}")
 
 def handle(conn, addr):
-    print(f"new connection {addr}")
+    print("new connection {addr}")
     connected = True
 
     while connected:
@@ -46,3 +46,5 @@ def handle(conn, addr):
 def broadcastMessage(message):
     for client in clients:
         client.send(message)
+
+start()
