@@ -22,18 +22,18 @@ def start():
         names.append(name)
         clients.append(conn)
 
-        print("Name is :{name}")
+        print(f'Name is :{name}')
 
-        broadcastMessage("{name} has joined the chat!".encode(FORMAT))
+        broadcastMessage(f'{name} has joined the chat!'.encode(FORMAT))
         conn.send('Connection successful!'.encode(FORMAT))
 
         thread = threading.Thread(target = handle, args = (conn, addr))
         thread.start()
 
-        print("active connections {threading.activeCount()-1}")
+        print(f'active connections {threading.activeCount()-1}')
 
 def handle(conn, addr):
-    print("new connection {addr}")
+    print(f'new connection {addr}')
     connected = True
 
     while connected:
