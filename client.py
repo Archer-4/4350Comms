@@ -75,16 +75,16 @@ class mainPage(tk.Frame):
         tk.Frame.__init__(self, parent)
         self.controller = controller
         self.label1 = tk.Label(self, text = "Main Page!")
-        #self.label1.pack()
 
+        #Grid options
         self.grid_columnconfigure(0, weight = 3)
         self.grid_columnconfigure(1, weight = 1)
         self.grid_columnconfigure(2, weight = 1)
-        self.grid_rowconfigure(1, minsize = 450)
+        self.grid_rowconfigure(0, minsize = 490)
 
+        #Frame for server connect widget
         self.connectF = tk.Frame(self)
-        #self.connectF.place(relx = 0.4, rely = 0.4)
-        self.connectF.grid(row = 0, column = 2)
+        self.connectF.grid(row = 0, column = 2, sticky = 'n')
         loginLabel = tk.Label(self.connectF, text = "Please Connect to Server")
         loginLabel.grid(row = 0, column = 0, columnspan = 2)
         ipLabel = tk.Label(self.connectF, text="Server IP:")
@@ -94,14 +94,17 @@ class mainPage(tk.Frame):
         self.connectBtn = tk.Button(self.connectF, text = "Connect", font = "Helvetica 10 bold", command = lambda: self.connect(entIp.get()))
         self.connectBtn.grid(row = 1, column = 2)
 
-        self.connectedF = tk.Frame(self, height = self.connectF.winfo_height(), width = self.connectF.winfo_width(), bg = "black")
-        #self.connectedF.grid(row = 0, column = 2)
-        #self.connectedF.lower()
-        self.connectLabel = tk.Label(self.connectedF, text = "CONNECTED", font = "Helvetica 14 bold")
-        self.connectLabel.pack()
+        #Frame for information display
+        self.connectedF = tk.Frame(self, height = self.connectF.winfo_height(), width = self.connectF.winfo_width())
+        self.connectLabel = tk.Label(self.connectedF, text = "CONNECTED", font = "Helvetica 12 bold")
+        self.connectLabel.grid(row = 0, column = 0, columnspan = 2)
+        quitBtn = tk.Button(self.connectedF, text="Disconnect", font = "Helvetica 10 bold", command = lambda: self.quit())
+        quitBtn.grid(row = 0, column = 2)
+        self.playerCount = tk.Label(self.connectedF, text = "Connected Players: None", font = "Helvetica 12 bold")
+        self.playerCount.grid(row = 1, column = 0, columnspan = 2)
+        self.playerBalance = tk.Label(self.connectedF, text = "Your Balance: ", font = "Helvetica 12 bold")
+        self.playerBalance.grid(row = 2, column = 0, columnspan = 2)
 
-        quitBtn = tk.Button(self, text="Disconnect", font = "Helvetica 10 bold", command = lambda: self.quit())
-        quitBtn.grid(row = 0, column = 1)
         #Chat Frame
         self.chatFrame = tk.Frame(self)
         self.chatFrame.grid(row = 3, column = 2)
@@ -130,7 +133,8 @@ class mainPage(tk.Frame):
         rcv = threading.Thread(target = self.receiveMsg)
         rcv.start()
         self.connectF.grid_forget()
-        self.connectedF.grid(row = 0, column = 2)
+        #self.grid_rowconfigure(1, minsize = 420)
+        self.connectedF.grid(row = 0, column = 2, sticky = 'n')
         self.connectBtn.config(state = tk.DISABLED)
         connectLab = "Connected to: " + ip
         self.connectLabel.configure(text = connectLab)
@@ -147,7 +151,8 @@ class mainPage(tk.Frame):
     def receiveMsg(self):
         while CONNECTED:
             try:
-                data = json.loads(client.recv(1024).decode(FORMAT))
+                incoming = client.recv(1024).decode(FORMAT)
+                data = json.loads(incoming)
                 if ('m' in data):
                     message = data.get('m')
                     if message == 'NAME':
@@ -157,8 +162,16 @@ class mainPage(tk.Frame):
                         self.textBox.insert(tk.END, message+"\n\n")
                         self.textBox.config(state = tk.DISABLED)
                         self.textBox.see(tk.END)
-            except:
+                if ('pCount' in data):
+                    count = data.get('pCount')
+                    string = "Connected Players: " + str(count)
+                    self.playerCount.configure(text = string)
+                    print(string)
+                del data
+                del incoming
+            except Exception as e:
                 print("Error from receiveMsg")
+                print(e)
                 client.close()
                 break
 
@@ -178,8 +191,9 @@ class mainPage(tk.Frame):
             client.close()
             CONNECTED = False
             self.connectBtn.config(state = tk.NORMAL)
-            self.connectF.grid(row = 0, column = 2)
+            self.connectF.grid(row = 0, column = 2, sticky = 'n')
             self.connectedF.grid_forget()
+            #self.grid_rowconfigure(1, minsize = 450)
 
 
 
