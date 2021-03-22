@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+import json
 import socket
 import threading
 
@@ -48,22 +49,14 @@ class loginPage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
-        #self.login = ttk.Frame()
-        #self.login.pack()
-        #self.login.title("Login")
-        #self.login.resizable(width = False, height = False)
-        #self.login.configure(width = 400, height = 400)
 
         self.plsLogin = tk.Label(self, text = "Please Enter a Username", justify = tk.CENTER, font = "Helvetica 14 bold")
-        #self.plsLogin.place(relheight = 0.15, relx = 0.2, rely = 0.07)
         self.plsLogin.pack(side="top")
 
         self.usrname = tk.Label(self, text = "Username: ", font = "Helvetica 12")
-        #self.usrname.place(relheight = 0.2, relx = 0.1, rely = 0.2)
         self.usrname.pack(side="top")
 
         self.entryName = tk.Entry(self, font = "Helvetica 14")
-        #self.entryName.place(relwidth = 0.4, relheight = 0.12, relx = 0.35, rely = 0.2)
         self.entryName.pack(side="top")
         self.entryName.focus()
 
@@ -87,7 +80,7 @@ class mainPage(tk.Frame):
         self.grid_columnconfigure(0, weight = 3)
         self.grid_columnconfigure(1, weight = 1)
         self.grid_columnconfigure(2, weight = 1)
-        self.grid_rowconfigure(2, minsize = 400)
+        self.grid_rowconfigure(1, minsize = 450)
 
         self.connectF = tk.Frame(self)
         #self.connectF.place(relx = 0.4, rely = 0.4)
@@ -102,8 +95,8 @@ class mainPage(tk.Frame):
         self.connectBtn.grid(row = 1, column = 2)
 
         self.connectedF = tk.Frame(self, height = self.connectF.winfo_height(), width = self.connectF.winfo_width(), bg = "black")
-        self.connectedF.grid(row = 0, column = 2)
-        self.connectedF.lower()
+        #self.connectedF.grid(row = 0, column = 2)
+        #self.connectedF.lower()
         self.connectLabel = tk.Label(self.connectedF, text = "CONNECTED", font = "Helvetica 14 bold")
         self.connectLabel.pack()
 
@@ -112,11 +105,11 @@ class mainPage(tk.Frame):
         #Chat Frame
         self.chatFrame = tk.Frame(self)
         self.chatFrame.grid(row = 3, column = 2)
-        self.textBox = tk.Text(self.chatFrame, width = 50, height = 10, font = "Helvetica 14", padx = 5, pady = 5)
+        self.textBox = tk.Text(self.chatFrame, width = 60, height = 10, font = "Helvetica 12", padx = 5, pady = 5, wrap = tk.WORD)
         self.textBox.grid(row = 0, column = 0, rowspan = 100, columnspan = 5, sticky = 'ne')
         self.textBox.config(state = tk.DISABLED)
         scrollbar = tk.Scrollbar(self.textBox)
-        scrollbar.place(relheight = 1, relx = 0.974)
+        scrollbar.place(relheight = 1.0, relx = 0.990)
         scrollbar.config(command = self.textBox.yview)
         self.entryMsg = tk.Entry(self.chatFrame, bg = "#ABB2B9", font = "Helvetica 13", width = 55)
         self.entryMsg.grid(row = 111, column = 0, columnspan = 4)
@@ -136,8 +129,8 @@ class mainPage(tk.Frame):
         CONNECTED = True
         rcv = threading.Thread(target = self.receiveMsg)
         rcv.start()
-        self.connectedF.tkraise()
         self.connectF.grid_forget()
+        self.connectedF.grid(row = 0, column = 2)
         self.connectBtn.config(state = tk.DISABLED)
         connectLab = "Connected to: " + ip
         self.connectLabel.configure(text = connectLab)
@@ -154,17 +147,18 @@ class mainPage(tk.Frame):
     def receiveMsg(self):
         while CONNECTED:
             try:
-                message = client.recv(1024).decode(FORMAT)
-
-                if message == 'NAME':
-                    client.send(playerName.encode(FORMAT))
-                else:
-                    self.textBox.config(state = tk.NORMAL)
-                    self.textBox.insert(tk.END, message+"\n\n")
-                    self.textBox.config(state = tk.DISABLED)
-                    self.textBox.see(tk.END)
+                data = json.loads(client.recv(1024).decode(FORMAT))
+                if ('m' in data):
+                    message = data.get('m')
+                    if message == 'NAME':
+                        client.send(playerName.encode(FORMAT))
+                    else:
+                        self.textBox.config(state = tk.NORMAL)
+                        self.textBox.insert(tk.END, message+"\n\n")
+                        self.textBox.config(state = tk.DISABLED)
+                        self.textBox.see(tk.END)
             except:
-                print("Error")
+                print("Error from receiveMsg")
                 client.close()
                 break
 
@@ -172,7 +166,9 @@ class mainPage(tk.Frame):
         self.textBox.config(state=tk.DISABLED)
         while CONNECTED:
             message = (f'{playerName}: {self.msg}')
-            client.send(message.encode(FORMAT))
+            data = json.dumps({'m':message})
+            #client.send(message.encode(FORMAT))
+            client.send(data.encode(FORMAT))
             break
 
     def quit(self):
@@ -183,6 +179,7 @@ class mainPage(tk.Frame):
             CONNECTED = False
             self.connectBtn.config(state = tk.NORMAL)
             self.connectF.grid(row = 0, column = 2)
+            self.connectedF.grid_forget()
 
 
 
