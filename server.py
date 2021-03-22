@@ -34,11 +34,13 @@ def start():
 
 def handle(conn, addr):
     print(f'new connection {addr}')
-    connected = True
 
-    while connected:
+    while True:
         message = conn.recv(1024)
-
+        if not message:
+            print(f'{addr} disconnected')
+            clients.remove(conn)
+            break;
         broadcastMessage(message)
 
     conn.close()

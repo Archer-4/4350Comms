@@ -10,9 +10,10 @@ PORT = 5000
 SERVER = "192.168.1.209"
 ADDRESS = (SERVER, PORT)
 FORMAT = "utf-8"
+CONNECTED = False
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect(ADDRESS)
+#client.connect(ADDRESS)
 
 
 
@@ -81,22 +82,66 @@ class mainPage(tk.Frame):
         tk.Frame.__init__(self, parent)
         self.controller = controller
         self.label1 = tk.Label(self, text = "Main Page!")
-        self.label1.pack()
-        self.textBox = tk.Text(self, width = 20, height = 2, font = "Helvetica 14", padx = 5, pady = 5)
-        self.textBox.place(relheight = 0.45, relwidth = 0.5, relx = 0.5, rely = 0.5, y = -10)
+        #self.label1.pack()
+
+        self.grid_columnconfigure(0, weight = 3)
+        self.grid_columnconfigure(1, weight = 1)
+        self.grid_columnconfigure(2, weight = 1)
+        self.grid_rowconfigure(2, minsize = 400)
+
+        self.connectF = tk.Frame(self)
+        #self.connectF.place(relx = 0.4, rely = 0.4)
+        self.connectF.grid(row = 0, column = 2)
+        loginLabel = tk.Label(self.connectF, text = "Please Connect to Server")
+        loginLabel.grid(row = 0, column = 0, columnspan = 2)
+        ipLabel = tk.Label(self.connectF, text="Server IP:")
+        ipLabel.grid(row = 1, column = 0)
+        entIp = tk.Entry(self.connectF, font = "Helvetica 13")
+        entIp.grid(row = 1, column = 1)
+        self.connectBtn = tk.Button(self.connectF, text = "Connect", font = "Helvetica 10 bold", command = lambda: self.connect(entIp.get()))
+        self.connectBtn.grid(row = 1, column = 2)
+
+        self.connectedF = tk.Frame(self, height = self.connectF.winfo_height(), width = self.connectF.winfo_width(), bg = "black")
+        self.connectedF.grid(row = 0, column = 2)
+        self.connectedF.lower()
+        self.connectLabel = tk.Label(self.connectedF, text = "CONNECTED", font = "Helvetica 14 bold")
+        self.connectLabel.pack()
+
+        quitBtn = tk.Button(self, text="Disconnect", font = "Helvetica 10 bold", command = lambda: self.quit())
+        quitBtn.grid(row = 0, column = 1)
+        #Chat Frame
+        self.chatFrame = tk.Frame(self)
+        self.chatFrame.grid(row = 3, column = 2)
+        self.textBox = tk.Text(self.chatFrame, width = 50, height = 10, font = "Helvetica 14", padx = 5, pady = 5)
+        self.textBox.grid(row = 0, column = 0, rowspan = 100, columnspan = 5, sticky = 'ne')
         self.textBox.config(state = tk.DISABLED)
         scrollbar = tk.Scrollbar(self.textBox)
         scrollbar.place(relheight = 1, relx = 0.974)
         scrollbar.config(command = self.textBox.yview)
-
-        self.entryMsg = tk.Entry(self, bg = "#ABB2B9", font = "Helvetica 13")
-        self.entryMsg.place(relheight = 0.05, relwidth = 0.42, relx = 0.5, rely = 0.95)
+        self.entryMsg = tk.Entry(self.chatFrame, bg = "#ABB2B9", font = "Helvetica 13", width = 55)
+        self.entryMsg.grid(row = 111, column = 0, columnspan = 4)
         self.entryMsg.focus()
+        self.sendBtn = tk.Button(self.chatFrame, text = "Send", font = "helvetica 10 bold", command = lambda: self.sendButton(self.entryMsg.get()))
+        self.sendBtn.grid(row = 111, column = 4)
 
-        self.sendBtn = tk.Button(self, text = "Send", font = "helvetica 10 bold", command = lambda: self.sendButton(self.entryMsg.get()))
-        self.sendBtn.place(relheight = 0.05, relwidth = 0.08, relx = 0.92,rely = 0.95)
-        rcv = threading.Thread(target=self.receiveMsg)
+    def connect(self, ip):
+        global SERVER
+        global CONNECTED
+        global client
+        SERVER = ip
+        port = 5000
+        address = (SERVER, port)
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client.connect(address)
+        CONNECTED = True
+        rcv = threading.Thread(target = self.receiveMsg)
         rcv.start()
+        self.connectedF.tkraise()
+        self.connectF.grid_forget()
+        self.connectBtn.config(state = tk.DISABLED)
+        connectLab = "Connected to: " + ip
+        self.connectLabel.configure(text = connectLab)
+
 
     def sendButton(self, msg):
         self.textBox.config(state = tk.DISABLED)
@@ -104,9 +149,10 @@ class mainPage(tk.Frame):
         self.entryMsg.delete(0, tk.END)
         send = threading.Thread(target = self.sendMessage)
         send.start()
+        self.sendMessage
 
     def receiveMsg(self):
-        while True:
+        while CONNECTED:
             try:
                 message = client.recv(1024).decode(FORMAT)
 
@@ -124,10 +170,20 @@ class mainPage(tk.Frame):
 
     def sendMessage(self):
         self.textBox.config(state=tk.DISABLED)
-        while True:
+        while CONNECTED:
             message = (f'{playerName}: {self.msg}')
             client.send(message.encode(FORMAT))
             break
+
+    def quit(self):
+        global CONNECTED
+        if CONNECTED:
+            client.shutdown(socket.SHUT_RDWR)
+            client.close()
+            CONNECTED = False
+            self.connectBtn.config(state = tk.NORMAL)
+            self.connectF.grid(row = 0, column = 2)
+
 
 
 test = gui()
