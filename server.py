@@ -20,6 +20,7 @@ FORMAT = "utf-8"
 clients, players = [], []
 nameReq = json.dumps({'m':"NAME"})
 success = json.dumps({'m':"Connection successful!"})
+commsLock = threading.Lock()
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDRESS)
@@ -63,10 +64,17 @@ def handle(conn, addr):
             players.pop(lostPos)
             clients.remove(conn)
             break;
-        data = json.loads(incoming)
+        incoming = incoming.decode(FORMAT)
+        print("Incoming is:")
+        print(incoming)
+        try: 
+            data = json.loads(incoming)
+        except:
+            continue
         if ('m' in data):
             message = data.get('m')
-            broadcastMessage(message)
+            with commsLock:
+                broadcastMessage(message)
 
     conn.close()
 
@@ -83,6 +91,16 @@ def updatePlayers():
             playerCount = len(players)
             outgo = json.dumps({'pCount':playerCount})
             for client in clients:
-                client.send(outgo.encode(FORMAT))
+                with commsLock:
+                    client.send(outgo.encode(FORMAT))
+        for player in players:
+            if player.updateFlag:
+                with commsLock:
+                    player.update()
+
+def blackJack():
+    curPlayers = []
+
+
 
 start()

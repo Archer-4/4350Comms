@@ -104,6 +104,33 @@ class mainPage(tk.Frame):
         self.playerCount.grid(row = 1, column = 0, columnspan = 2)
         self.playerBalance = tk.Label(self.connectedF, text = "Your Balance: ", font = "Helvetica 12 bold")
         self.playerBalance.grid(row = 2, column = 0, columnspan = 2)
+        
+        #Frame for Game:
+        self.blackJackF = tk.Frame(self)
+        self.blackJackF.grid(row = 0, column = 0, sticky = 'n')
+        self.blackJackF.grid_columnconfigure(0, weight = 2)
+        self.blackJackF.grid_columnconfigure(1, weight = 1)
+        self.blackJackF.grid_rowconfigure(6, minsize = 50)
+        self.blLabel = tk.Label(self.blackJackF, text = "BlackJack", font = "Helvetica 14 bold")
+        self.blLabel.grid(row = 0, column = 0, columnspan = 3, sticky = 'e')
+        self.dealerHandL = tk.Label(self.blackJackF, text = "Dealer's Hand: ", font = "Helvetica 12 bold")
+        self.dealerHandL.grid(row = 1, column = 0, sticky = 'e')
+        self.dealerHandValL = tk.Label(self.blackJackF, text = "Dealer's Hand Value:", font = "Helvetica 12 bold")
+        self.dealerHandValL.grid(row = 2, column = 0, sticky = 'e')
+        self.handL = tk.Label(self.blackJackF, text = "Hand: ", font = "Helvetica 12 bold")
+        self.handL.grid(row = 3, column = 0, sticky = 'e')
+        self.handValL = tk.Label(self.blackJackF, text = "Hand Value: ", font = "Helvetica 12 bold")
+        self.handValL.grid(row=4, column = 0, sticky = 'e')
+        self.betValL = tk.Label(self.blackJackF, text = "Current bet: ", font = "Helvetica 12 bold")
+        self.betValL.grid(row = 5, column = 0, sticky = 'e')
+        self.hitBtn = tk.Button(self.blackJackF, text = "HIT", font = "Helvetica 10 bold")
+        self.hitBtn.grid(row = 6, column = 0)
+        self.dblBtn = tk.Button(self.blackJackF, text = "Double Down", font = "Helvetica 10 bold")
+        self.dblBtn.grid(row = 6, column = 1)
+        self.betBtn = tk.Button(self.blackJackF, text = "Bet x5", font = "Helvetica 10 bold")
+        self.betBtn.grid(row = 7, column = 0)
+        self.bet2Btn = tk.Button(self.blackJackF, text = "Bet x10", font = "Helvetica 10 bold")
+        self.bet2Btn.grid(row = 7, column = 1)
 
         #Chat Frame
         self.chatFrame = tk.Frame(self)
@@ -149,30 +176,53 @@ class mainPage(tk.Frame):
         self.sendMessage
 
     def receiveMsg(self):
+        jsonList = []
         while CONNECTED:
             try:
                 incoming = client.recv(1024).decode(FORMAT)
-                data = json.loads(incoming)
-                if ('m' in data):
-                    message = data.get('m')
-                    if message == 'NAME':
-                        client.send(playerName.encode(FORMAT))
-                    else:
-                        self.textBox.config(state = tk.NORMAL)
-                        self.textBox.insert(tk.END, message+"\n\n")
-                        self.textBox.config(state = tk.DISABLED)
-                        self.textBox.see(tk.END)
-                if ('pCount' in data):
-                    count = data.get('pCount')
-                    string = "Connected Players: " + str(count)
-                    self.playerCount.configure(text = string)
-                    print(string)
+                #print("incoming is:")
+                #print(incoming + "End Incoming")
+                #temp = 0
+                #while True:
+                #    temp = incoming.find('}')
+                #    if temp != -1:
+                #        jsonList.append(incoming[:temp+1])
+                #        incoming =incoming[temp+1:]
+                #    else:
+                #        break
+                jsonList = self.parseJson(incoming)
+                for item in jsonList:
+                    print(item)
+                    item.strip().replace('\'','\"').replace('\0', '')
+                    data = json.loads(item)
+                    print(data)
+                    print("Looped")
+                    if ('m' in data):
+                        message = data.get('m')
+                        if message == 'NAME':
+                            client.send(playerName.encode(FORMAT))
+                        else:
+                            self.textBox.config(state = tk.NORMAL)
+                            self.textBox.insert(tk.END, message+"\n\n")
+                            self.textBox.config(state = tk.DISABLED)
+                            self.textBox.see(tk.END)
+                    if ('pCount' in data):
+                        count = data.get('pCount')
+                        string = "Connected Players: " + str(count)
+                        self.playerCount.configure(text = string)
+                        print(string)
+                    if ('bal' in data):
+                        balance = data.get('bal')
+                        string = "Your Balance: " + str(balance)
+                        self.playerBalance.configure(text = string)
+
+                jsonList.clear()
                 del data
                 del incoming
             except Exception as e:
                 print("Error from receiveMsg")
                 print(e)
-                client.close()
+                #client.close()
                 break
 
     def sendMessage(self):
@@ -195,6 +245,17 @@ class mainPage(tk.Frame):
             self.connectedF.grid_forget()
             #self.grid_rowconfigure(1, minsize = 450)
 
+    def parseJson(self, incoming):
+        temp = 0
+        jsonList = []
+        while True:
+            temp = incoming.find('}')
+            if temp != -1:
+                jsonList.append(incoming[:temp+1])
+                incoming =incoming[temp+1:]
+            else:
+                break
+        return jsonList
 
 
 test = gui()
