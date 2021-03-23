@@ -5,15 +5,9 @@ from support import player
 from urllib.request import urlopen
 import urllib
 PORT = 5000
-def get_public_ip():
-    print("Getting public IP")
-    import re
-    data = str(urlopen('http://checkip.dyndns.com/').read())
-    print(data)
-    return re.compile(r'Address: (\d+.\d+.\d+.\d+)').search(data).group(1)
 
 SERVER = socket.gethostbyname(socket.gethostname())
-publicIp = get_public_ip()
+#publicIp = get_public_ip()
 #ADDRESS = (SERVER, PORT)
 ADDRESS = ('', PORT)
 FORMAT = "utf-8"
@@ -97,6 +91,13 @@ def updatePlayers():
             if player.updateFlag:
                 with commsLock:
                     player.update()
+
+def get_public_ip():
+    print("Getting public IP")
+    import re
+    data = str(urlopen('http://checkip.dyndns.com/').read())
+    print(data)
+    return re.compile(r'Address: (\d+.\d+.\d+.\d+)').search(data).group(1)
 
 def blackJack():
     curPlayers = []
