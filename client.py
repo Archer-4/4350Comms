@@ -22,7 +22,7 @@ class gui(tk.Tk):
 
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
-        tk.Tk.iconbitmap(self, default="clientIcon.ico")
+        #tk.Tk.iconbitmap(self, default="clientIcon.ico")
         tk.Tk.wm_title(self, "Work In Progress")
         container = tk.Frame(self)
         container.pack(side="top", fill="both", expand = True)
